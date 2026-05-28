@@ -1,6 +1,7 @@
 import cv2
 import os
-from datetime import datetime
+import tkinter as tk
+from tkinter import simpledialog
 
 # ─────────────────────────────────────────
 #  KONFIGURASI — edit sesuai kebutuhan
@@ -30,13 +31,6 @@ def make_dirs(classes):
         os.makedirs(os.path.join(SAVE_DIR, cls), exist_ok=True)
 
 
-def count_existing(cls):
-    path = os.path.join(SAVE_DIR, cls)
-    if not os.path.exists(path):
-        return 0
-    return len([f for f in os.listdir(path) if f.endswith(".jpg")])
-
-
 def noop(_value):
     return None
 
@@ -59,6 +53,21 @@ def read_crop_controls(window_name):
     return crop_on, crop_width, crop_height
 
 
+def ask_part_count(default_value=100):
+    root = tk.Tk()
+    root.withdraw()
+    root.attributes("-topmost", True)
+    value = simpledialog.askinteger(
+        "Jumlah Part",
+        "Masukkan jumlah part per class:",
+        initialvalue=default_value,
+        minvalue=1,
+        parent=root,
+    )
+    root.destroy()
+    return value if value is not None else default_value
+
+
 def crop_and_resize(frame, target_width, target_height):
     source_height, source_width = frame.shape[:2]
     target_ratio = target_width / target_height
@@ -79,7 +88,7 @@ def crop_and_resize(frame, target_width, target_height):
     return cv2.resize(cropped, (target_width, target_height), interpolation=cv2.INTER_AREA)
 
 
-def draw_ui(frame, current_class, class_idx, total_classes, count, flash):
+def draw_ui(frame, current_class, class_idx, total_classes, count, target_count, flash):
     h, w = frame.shape[:2]
 
     # ── top bar ──
@@ -90,8 +99,8 @@ def draw_ui(frame, current_class, class_idx, total_classes, count, flash):
     cv2.putText(frame, label, (14, 36),
                 cv2.FONT_HERSHEY_SIMPLEX, 1.1, COL_YELLOW, 2, cv2.LINE_AA)
 
-    # photo count
-    count_str = f"{count} foto"
+    # part count
+    count_str = f"{count}/{target_count} part"
     cv2.putText(frame, count_str, (w - 130, 36),
                 cv2.FONT_HERSHEY_SIMPLEX, 0.85, COL_GREEN, 2, cv2.LINE_AA)
 
@@ -128,10 +137,15 @@ def draw_ui(frame, current_class, class_idx, total_classes, count, flash):
     return frame
 
 
+def make_image_name(current_class, part_count, image_number):
+    return f"{current_class}_{part_count}pcs_image{image_number}.jpg"
+
+
 def main():
     make_dirs(PART_CLASSES)
 
-    counts = {cls: count_existing(cls) for cls in PART_CLASSES}
+    counts = {cls: 0 for cls in PART_CLASSES}
+    part_count = ask_part_count(100)
 
     cap = cv2.VideoCapture(WEBCAM_INDEX)
     if not cap.isOpened():
@@ -150,6 +164,7 @@ def main():
     print("\n── Dataset Capture ──────────────────────")
     print(f"  Folder output : {os.path.abspath(SAVE_DIR)}")
     print(f"  Part classes  : {', '.join(PART_CLASSES)}")
+    print(f"  Part count    : {part_count}")
     print("  Crop settings : atur dari window Controls")
     print("  SPACE = foto  |  N = next  |  P = prev  |  Q = keluar")
     print("─────────────────────────────────────────\n")
@@ -176,11 +191,11 @@ def main():
             save_frame = frame.copy()
 
         draw_ui(display, current_class, class_idx,
-                len(PART_CLASSES), count, flash)
+                len(PART_CLASSES), count, part_count, flash)
         if flash > 0:
             flash -= 1
 
-        status_text = f"Crop: {'ON' if crop_on else 'OFF'} | {crop_width} x {crop_height}"
+        status_text = f"Crop: {'ON' if crop_on else 'OFF'} | {crop_width} x {crop_height} | Part: {part_count}"
         cv2.putText(display, status_text, (14, 68),
                     cv2.FONT_HERSHEY_SIMPLEX, 0.65, COL_BLUE, 2, cv2.LINE_AA)
 
@@ -189,14 +204,17 @@ def main():
 
         # ── SPACE: ambil foto ──
         if key == ord(" "):
-            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S_%f")
-            filename  = f"{current_class}_{timestamp}.jpg"
-            save_path = os.path.join(SAVE_DIR, current_class, filename)
-            cv2.imwrite(save_path, save_frame)
-            flash = 8
-            counts[current_class] += 1
-            new_count = counts[current_class]
-            print(f"  [{current_class}] foto #{new_count} → {save_path}")
+            if count >= part_count:
+                print(f"  [{current_class}] jumlah part {part_count} sudah tercapai.")
+            else:
+                image_number = count + 1
+                filename = make_image_name(current_class, part_count, image_number)
+                save_path = os.path.join(SAVE_DIR, current_class, filename)
+                cv2.imwrite(save_path, save_frame)
+                flash = 8
+                counts[current_class] += 1
+                new_count = counts[current_class]
+                print(f"  [{current_class}] foto #{new_count} → {save_path}")
 
         # ── N: next class ──
         elif key == ord("n") or key == ord("N"):
