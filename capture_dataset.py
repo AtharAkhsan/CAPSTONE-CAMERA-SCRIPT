@@ -6,9 +6,9 @@ from tkinter import simpledialog
 # ─────────────────────────────────────────
 #  KONFIGURASI — edit sesuai kebutuhan
 # ─────────────────────────────────────────
-WEBCAM_INDEX   = 1         # ganti ke 1 atau 2 kalau webcam tidak muncul
-SAVE_DIR       = "dataset"  # folder output
-PART_CLASSES   = [          # daftar nama part — tambah/hapus sesuai kebutuhan
+WEBCAM_INDEX   = 1          # ganti ke 1 atau 2 jika webcam tidak terbuka
+SAVE_DIR       = "dataset"
+PART_CLASSES   = [           # tambah/hapus nama kelas sesuai kebutuhan
     "screw",
     "bolt",
     "nut",
@@ -16,7 +16,7 @@ PART_CLASSES   = [          # daftar nama part — tambah/hapus sesuai kebutuhan
 ]
 # ─────────────────────────────────────────
 
-# ── warna UI (BGR) ──
+# Warna UI dalam format BGR
 COL_BG       = (30, 30, 30)
 COL_WHITE    = (240, 240, 240)
 COL_YELLOW   = (0, 200, 255)
@@ -91,20 +91,16 @@ def crop_and_resize(frame, target_width, target_height):
 def draw_ui(frame, current_class, class_idx, total_classes, count, target_count, flash):
     h, w = frame.shape[:2]
 
-    # ── top bar ──
     cv2.rectangle(frame, (0, 0), (w, 56), COL_BG, -1)
 
-    # class indicator
     label = f"[{class_idx+1}/{total_classes}]  {current_class.upper()}"
     cv2.putText(frame, label, (14, 36),
                 cv2.FONT_HERSHEY_SIMPLEX, 1.1, COL_YELLOW, 2, cv2.LINE_AA)
 
-    # part count
     count_str = f"{count}/{target_count} part"
     cv2.putText(frame, count_str, (w - 130, 36),
                 cv2.FONT_HERSHEY_SIMPLEX, 0.85, COL_GREEN, 2, cv2.LINE_AA)
 
-    # ── bottom bar ──
     cv2.rectangle(frame, (0, h - 52), (w, h), COL_BG, -1)
 
     hints = [
@@ -122,7 +118,6 @@ def draw_ui(frame, current_class, class_idx, total_classes, count, target_count,
                     cv2.FONT_HERSHEY_SIMPLEX, 0.6, COL_GRAY, 1, cv2.LINE_AA)
         x += (len(desc) + 3) * 10
 
-    # ── flash overlay saat foto diambil ──
     if flash > 0:
         overlay = frame.copy()
         cv2.rectangle(overlay, (0, 0), (w, h), (255, 255, 255), -1)
@@ -153,7 +148,6 @@ def main():
         print("Coba ganti WEBCAM_INDEX ke 1 atau 2 di bagian atas script.")
         return
 
-    # resolusi webcam
     cap.set(cv2.CAP_PROP_BUFFERSIZE, 1)
     cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1920)
     cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 1080)
@@ -202,7 +196,6 @@ def main():
         cv2.imshow("Dataset Capture", display)
         key = cv2.waitKey(1) & 0xFF
 
-        # ── SPACE: ambil foto ──
         if key == ord(" "):
             if count >= part_count:
                 print(f"  [{current_class}] jumlah part {part_count} sudah tercapai.")
@@ -216,24 +209,20 @@ def main():
                 new_count = counts[current_class]
                 print(f"  [{current_class}] foto #{new_count} → {save_path}")
 
-        # ── N: next class ──
         elif key == ord("n") or key == ord("N"):
             class_idx = (class_idx + 1) % len(PART_CLASSES)
             print(f"\n  ▶ Ganti ke class: {PART_CLASSES[class_idx]}")
 
-        # ── P: previous class ──
         elif key == ord("p") or key == ord("P"):
             class_idx = (class_idx - 1) % len(PART_CLASSES)
             print(f"\n  ◀ Ganti ke class: {PART_CLASSES[class_idx]}")
 
-        # ── Q: keluar ──
         elif key == ord("q") or key == ord("Q"):
             break
 
     cap.release()
     cv2.destroyAllWindows()
 
-    # ── ringkasan ──
     print("\n── Ringkasan Dataset ────────────────────")
     total = 0
     for cls in PART_CLASSES:

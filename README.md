@@ -1,61 +1,86 @@
 # CAPSTONE Camera Script
 
-This project is a simple webcam dataset capture tool built with Python and OpenCV. It opens your camera, lets you switch between part classes, and saves captured images into class folders.
+Alat pengambilan dataset gambar berbasis webcam, dibangun dengan Python dan OpenCV. Buka kamera, pilih kelas part, lalu simpan foto ke folder dataset secara terorganisir.
 
-## Requirements
+## Persyaratan
 
-- Python 3.11 or newer
-- A working webcam
+- Python 3.11 atau lebih baru
+- Webcam yang berfungsi
 - `opencv-python`
 
-## Setup
+## Instalasi
 
-If you already have the virtual environment in this folder, activate it first:
+Aktifkan virtual environment terlebih dahulu (jika sudah tersedia):
 
 ```powershell
 .venv\Scripts\activate
 ```
 
-If you do not have the package installed yet, install it with:
+Jika paket belum terinstal, install dengan:
 
 ```powershell
 pip install opencv-python
 ```
 
-## Run
-
-Start the script with:
+## Menjalankan Script
 
 ```powershell
 python capture_dataset.py
 ```
 
-If `python` does not use the virtual environment on your machine, run it directly with:
+Jika `python` tidak mengarah ke virtual environment, jalankan langsung dengan:
 
 ```powershell
 .venv\Scripts\python.exe capture_dataset.py
 ```
 
-## Controls
+Saat script dimulai, akan muncul dialog untuk mengisi **jumlah target foto per kelas**.
 
-- `SPACE` = take a photo
-- `N` = next class
-- `P` = previous class
-- `Q` = quit
+## Kontrol
+
+| Tombol  | Fungsi             |
+|---------|--------------------|
+| `SPACE` | Ambil foto         |
+| `N`     | Kelas berikutnya   |
+| `P`     | Kelas sebelumnya   |
+| `Q`     | Keluar             |
+
+## Pengaturan Crop
+
+Setelah script berjalan, akan muncul jendela **Controls** dengan trackbar:
+
+- **Crop On** — aktifkan/nonaktifkan crop
+- **Crop Width** — lebar area crop (piksel)
+- **Crop Height** — tinggi area crop (piksel)
+
+Gambar yang disimpan menggunakan ukuran crop yang sedang aktif.
 
 ## Output
 
-Images are saved in the `dataset` folder, grouped by class name:
+Foto disimpan di folder `dataset/`, dikelompokkan per kelas:
 
-- `dataset/screw`
-- `dataset/bolt`
-- `dataset/nut`
-- `dataset/gear`
+```
+dataset/
+├── screw/
+├── bolt/
+├── nut/
+└── gear/
+```
 
-## Webcam Note
+Nama file mengikuti format: `<kelas>_<jumlah>pcs_image<nomor>.jpg`
 
-If the camera does not open, change `WEBCAM_INDEX` at the top of `capture_dataset.py` from `0` to `1` or `2`.
+## Kustomisasi
 
-## Customize Classes
+Edit bagian **KONFIGURASI** di awal file `capture_dataset.py`:
 
-Edit `PART_CLASSES` in `capture_dataset.py` to add or remove object classes before capturing data.
+| Variabel       | Keterangan                                      |
+|----------------|-------------------------------------------------|
+| `WEBCAM_INDEX` | Indeks webcam (`0`, `1`, atau `2`)              |
+| `SAVE_DIR`     | Folder penyimpanan dataset (default: `dataset`) |
+| `PART_CLASSES` | Daftar nama kelas — tambah atau hapus sesuai kebutuhan |
+
+## Troubleshooting
+
+**Webcam tidak terbuka** — Ganti nilai `WEBCAM_INDEX` di `capture_dataset.py` dari `0` ke `1` atau `2`.
+
+**Foto tidak tersimpan** — Pastikan folder `dataset/` dapat ditulis dan kelas yang dipilih belum mencapai target jumlah foto.
